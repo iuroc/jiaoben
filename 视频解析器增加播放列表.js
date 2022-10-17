@@ -2,8 +2,8 @@
 // @name         视频解析器显示播放列表
 // @namespace    http://tampermonkey.net/
 // @version      0.1
-// @description  try to take over the world!
-// @author       You
+// @description  为你的视频解析页面增加播放列表，无需再回原网页找链接
+// @author       欧阳鹏
 // @match        *://*/*url=http*iqiyi.com*
 // @match        *://*/*url=http*youku.com*
 // @match        *://*/*url=http*mgtv.com*
