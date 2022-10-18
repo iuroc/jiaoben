@@ -2,7 +2,7 @@
 // @name         视频解析器显示播放列表
 // @namespace    http://tampermonkey.net/
 // @version      1.2
-// @description  为你的视频解析页面增加播放列表，无需再回原网页找链接
+// @description  为你的视频解析页面增加播放列表，无需再回原网页找链接，目前已支持爱奇艺电视剧
 // @author       欧阳鹏
 // @match        *://*/*url=http*iqiyi.com*
 // @match        *://*/*url=http*youku.com*
@@ -139,8 +139,8 @@
                     margin: 10px;
                     padding: 10px;
                     border-radius: 10px;
-                    background-color: rgba(255, 255, 255, 0.03);
-                    color: rgba(255, 255, 255, 0.2);
+                    background-color: rgba(255, 255, 255, 0.1);
+                    color: rgba(255, 255, 255, 0.5);
                     cursor: pointer;
                     display: none;
                 }
@@ -194,7 +194,7 @@
                 }
                 var v_url = play_list[i].page_url.replace(/^http(.*)$/, 'https$1')
                 var play_url = location.href.replace(/(.*?\?.*url=)http.*?(&.*?)?$/, '$1' + v_url + '$2')
-                list_html += `<div class="item ${v_url == url ? 'active' : ''}" onclick="top.location.href='${play_url}'">${play_list[i].album_order}</div>`
+                list_html += `<div class="item ${url.search(v_url) != -1 ? 'active' : ''}" onclick="top.location.href='${play_url}'">${play_list[i].album_order}</div>`
             }
         }
         html = html.replace('<!-- list -->', list_html)
@@ -214,17 +214,24 @@
             var sign = md5(`app_version=3.0.0&auth_cookie=&device_id=apee&entity_id=${entity_id}&src=pcw_tvg&timestamp=0&user_id=&vip_status=0&vip_type=&secret_key=howcuteitis`).toUpperCase()
             var url_2 = `https://mesh.if.iqiyi.com/tvg/pcw/base_info?entity_id=${entity_id}&timestamp=0&src=pcw_tvg&vip_status=0&vip_type=&auth_cookie=&device_id=apee&user_id=&app_version=3.0.0&sign=${sign}`
             $.get(url_2, function (data) {
-                var play_list = data.data.template.pure_data.selector_bk
-                var play_list = play_list[play_list.length - 1].videos.feature_paged
-                var keys = Object.keys(play_list)
-                var list = []
-                for (var i = 0; i < keys.length; i++) {
-                    var item = play_list[keys[i]]
-                    for (var j = 0; j < item.length; j++) {
-                        list.push(item[j])
+                if (data.data.template.template_id == 'album_template') {
+                    var play_list = data.data.template.pure_data.selector_bk
+                    for (var i = 0; i < play_list.length; i++) {
+                        if (typeof play_list[i].videos == 'object' && play_list[i].videos.feature_paged != 'undefined') {
+                            play_list = play_list[i].videos.feature_paged
+                            break
+                        }
                     }
+                    var keys = Object.keys(play_list)
+                    var list = []
+                    for (var i = 0; i < keys.length; i++) {
+                        var item = play_list[keys[i]]
+                        for (var j = 0; j < item.length; j++) {
+                            list.push(item[j])
+                        }
+                    }
+                    load_play_list(list, 'iqiyi')
                 }
-                load_play_list(list, 'iqiyi')
             })
         })
     }
