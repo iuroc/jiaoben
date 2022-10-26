@@ -2,7 +2,7 @@
 // @name         视频解析器显示播放列表
 // @namespace    http://tampermonkey.net/
 // @version      1.2
-// @description  为你的视频解析页面增加播放列表，无需再回原网页找链接，目前已支持爱奇艺电视剧
+// @description  为你的视频解析页面增加播放列表，无需再回原网页找链接，目前已支持爱奇艺电视剧、腾讯视频电视剧
 // @author       欧阳鹏
 // @match        *://*/*url=http*iqiyi.com*
 // @match        *://*/*url=http*youku.com*
@@ -14,7 +14,7 @@
 // @grant        none
 // ==/UserScript==
 
-
+declare var md5: (str: string) => string
 
 (function () {
     'use strict';
@@ -23,15 +23,17 @@
         return
     }
 
-    var url = getQueryVariable('url')
-    var video_from = get_video_from(url)
+    var url: string = getQueryVariable('url') as string
+    var video_from: string = get_video_from(url) as string
     if (video_from == 'iqiyi') {
         load_from_iqiyi(url)
+    } else if (video_from == 'qq') {
+        load_from_qq(url)
     }
     if (!url) {
         return
     }
-    function load_play_list(play_list, video_from) {
+    function load_play_list(play_list: any[], video_from: string) {
         $('body').append(`<iframe style="position:fixed;top:0;right:0;width:300px;height:400px;margin:10px;border-radius:10px;color:white;overflow:hidden;" class="apee_play_list" id="apee_play_list" name="apee_play_list" frameborder="0" allowtransparency="true"></iframe>`)
 
         var html = `<!DOCTYPE html>
@@ -182,9 +184,9 @@
         
         </html>`
 
-        var list_html = ''
+        var list_html: string = ''
         if (video_from == 'iqiyi') {
-            play_list.sort((a, b) => {
+            play_list.sort((a: any, b: any) => {
                 return a.album_order - b.album_order
             })
             for (var i = 0; i < play_list.length; i++) {
@@ -192,13 +194,23 @@
                     // 预告片待处理
                     continue
                 }
-                var v_url = play_list[i].page_url.replace(/^http(.*)$/, 'https$1')
-                var play_url = location.href.replace(/(.*?\?.*url=)http.*?(&.*?)?$/, '$1' + v_url + '$2')
+                var v_url: string = play_list[i].page_url.replace(/^http(.*)$/, 'https$1')
+                var play_url: string = location.href.replace(/(.*?\?.*url=)http.*?(&.*?)?$/, '$1' + v_url + '$2')
                 list_html += `<div class="item ${url.search(v_url) != -1 ? 'active' : ''}" onclick="top.location.href='${play_url}'">${play_list[i].album_order}</div>`
+            }
+        } else if (video_from == 'qq') {
+            for (var i = 0; i < play_list.length; i++) {
+                if (play_list[i].is_trailer == '1') {
+                    // 预告片待处理
+                    continue
+                }
+                var v_url: string = `https://v.qq.com/x/cover/${play_list[i].cid}/${play_list[i].vid}.html`
+                var play_url: string = location.href.replace(/(.*?\?.*url=)http.*?(&.*?)?$/, '$1' + v_url + '$2')
+                list_html += `<div class="item ${url.search(v_url) != -1 ? 'active' : ''}" onclick="top.location.href='${play_url}'">${play_list[i].title}</div>`
             }
         }
         html = html.replace('<!-- list -->', list_html)
-        var iframe = window.frames['apee_play_list']
+        var iframe: any = window.frames['apee_play_list']
         iframe.document.open()
         iframe.document.write(html)
         iframe.document.close()
@@ -208,14 +220,14 @@
      * 爱奇艺解析
      * @param {string} url 视频链接
      */
-    function load_from_iqiyi(url) {
+    function load_from_iqiyi(url: string) {
         $.get(url, function (data) {
-            var entity_id = data.match(/"tvId":(\w+)/)[1]
-            var sign = md5(`app_version=3.0.0&auth_cookie=&device_id=apee&entity_id=${entity_id}&src=pcw_tvg&timestamp=0&user_id=&vip_status=0&vip_type=&secret_key=howcuteitis`).toUpperCase()
-            var url_2 = `https://mesh.if.iqiyi.com/tvg/pcw/base_info?entity_id=${entity_id}&timestamp=0&src=pcw_tvg&vip_status=0&vip_type=&auth_cookie=&device_id=apee&user_id=&app_version=3.0.0&sign=${sign}`
+            var entity_id: string = data.match(/"tvId":(\w+)/)[1]
+            var sign: string = md5(`app_version=3.0.0&auth_cookie=&device_id=apee&entity_id=${entity_id}&src=pcw_tvg&timestamp=0&user_id=&vip_status=0&vip_type=&secret_key=howcuteitis`).toUpperCase()
+            var url_2: string = `https://mesh.if.iqiyi.com/tvg/pcw/base_info?entity_id=${entity_id}&timestamp=0&src=pcw_tvg&vip_status=0&vip_type=&auth_cookie=&device_id=apee&user_id=&app_version=3.0.0&sign=${sign}`
             $.get(url_2, function (data) {
                 if (data.data.template.template_id == 'album_template') {
-                    var play_list = data.data.template.pure_data.selector_bk
+                    var play_list: any[] = data.data.template.pure_data.selector_bk
                     for (var i = 0; i < play_list.length; i++) {
                         if (typeof play_list[i].videos == 'object' && play_list[i].videos.feature_paged != 'undefined') {
                             play_list = play_list[i].videos.feature_paged
@@ -223,9 +235,9 @@
                         }
                     }
                     var keys = Object.keys(play_list)
-                    var list = []
+                    var list: any[] = []
                     for (var i = 0; i < keys.length; i++) {
-                        var item = play_list[keys[i]]
+                        var item: any[] = play_list[keys[i]]
                         for (var j = 0; j < item.length; j++) {
                             list.push(item[j])
                         }
@@ -239,9 +251,9 @@
      * 判断视频来源 爱奇艺 腾讯 芒果 优酷
      * @param {string} url 视频连接
      */
-    function get_video_from(url) {
-        var keys = ['iqiyi.com', 'v.qq.com', 'mgtv.com', 'youku.com']
-        var names = ['iqiyi', 'qq', 'mgtv', 'youku']
+    function get_video_from(url: string) {
+        var keys: string[] = ['iqiyi.com', 'v.qq.com', 'mgtv.com', 'youku.com']
+        var names: string[] = ['iqiyi', 'qq', 'mgtv', 'youku']
         var url_data = new URL(url)
         for (var i = 0; i < keys.length; i++) {
             if (url_data.hostname.search(keys[i]) != -1) {
@@ -256,7 +268,7 @@
      * @param {string} variable GET参数
      * @returns 参数内容
      */
-    function getQueryVariable(variable) {
+    function getQueryVariable(variable: string): string | false {
         var query = window.location.search.substring(1)
         var vars = query.split("&")
         for (var i = 0; i < vars.length; i++) {
@@ -266,5 +278,21 @@
             }
         }
         return false
+    }
+    /**
+     * 腾讯视频解析
+     * @param url 视频链接
+     */
+    function load_from_qq(url: string): void {
+        $.get(url, function (data) {
+            var json: string = data.match(/(window\.__pinia=.*?)<\/script>/, data)[1]
+            var data = eval(json)
+            var list: [] = (window as any).__pinia.episodeMain.listData[0]
+            var playlist: [] = []
+            list.forEach(item => {
+                playlist.push(item['item_params'])
+            })
+            load_play_list(playlist, 'qq')
+        })
     }
 }())
