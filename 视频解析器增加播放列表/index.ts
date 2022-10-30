@@ -34,7 +34,7 @@ declare var md5: (str: string) => string
         return
     }
     function load_play_list(play_list: any[], video_from: string) {
-        $('body').append(`<iframe style="position:fixed;top:0;right:0;width:300px;height:400px;margin:10px;border-radius:10px;color:white;overflow:hidden;" class="apee_play_list" id="apee_play_list" name="apee_play_list" frameborder="0" allowtransparency="true"></iframe>`)
+        $('body').append(`<iframe style="z-index:10000;position:fixed;top:0;right:0;width:300px;height:400px;margin:10px;border-radius:10px;color:white;overflow:hidden;" class="apee_play_list" id="apee_play_list" name="apee_play_list" frameborder="0" allowtransparency="true"></iframe>`)
 
         var html = `<!DOCTYPE html>
         <html lang="zh-CN">
