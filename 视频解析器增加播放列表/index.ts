@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         视频解析器显示播放列表
-// @namespace    http://tampermonkey.net/
-// @version      1.2
-// @description  为你的视频解析页面增加播放列表，无需再回原网页找链接，目前已支持爱奇艺电视剧、腾讯视频电视剧
+// @namespace    https://github.com/oyps/jiaoben/tree/main/%E8%A7%86%E9%A2%91%E8%A7%A3%E6%9E%90%E5%99%A8%E5%A2%9E%E5%8A%A0%E6%92%AD%E6%94%BE%E5%88%97%E8%A1%A8
+// @version      1.4
+// @description  为你的视频解析页面增加播放列表，无需再回原网页找链接，目前已支持爱奇艺电视剧、腾讯视频电视剧，增加双击全屏
 // @author       欧阳鹏
 // @match        *://*/*url=http*iqiyi.com*
 // @match        *://*/*url=http*youku.com*
@@ -16,6 +16,12 @@
 
 declare var md5: (str: string) => string
 
+interface IFrame extends HTMLIFrameElement {
+    mozRequestFullScreen?: () => void
+    webkitRequestFullScreen?: () => void
+    msRequestFullscreen?: () => void
+}
+
 (function () {
     'use strict';
     // iframe加载时不执行脚本
@@ -23,6 +29,22 @@ declare var md5: (str: string) => string
         return
     }
 
+    document.addEventListener('dblclick', function () {
+        let ele = this.documentElement as IFrame
+        if (document.fullscreenElement) {
+            document.exitFullscreen()
+        } else {
+            if (ele.requestFullscreen) {
+                ele.requestFullscreen()
+            } else if (ele.mozRequestFullScreen) {
+                ele.mozRequestFullScreen()
+            } else if (ele.webkitRequestFullScreen) {
+                ele.webkitRequestFullScreen()
+            } else if (ele.msRequestFullscreen) {
+                ele.msRequestFullscreen()
+            }
+        }
+    })
     var url: string = getQueryVariable('url') as string
     var video_from: string = get_video_from(url) as string
     if (video_from == 'iqiyi') {
